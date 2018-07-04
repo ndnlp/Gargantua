@@ -2,10 +2,12 @@ import xml.etree.ElementTree as et
 import sys
 import os
 
-alignment_path = "sentence_alignment"
-langs = sys.argv[1:]
+srcdir = sys.argv[1]
+dstdir = sys.argv[2]
+alignment_path = os.path.join(srcdir, "sentence_alignment")
+langs = sys.argv[3:]
 
-files = []
+files = {}
 for filename in os.listdir(alignment_path):
     if filename.endswith(".xml"):
         tree = et.parse(os.path.join(alignment_path, filename))
@@ -16,22 +18,22 @@ for filename in os.listdir(alignment_path):
         for attr in ["source_id", "translation_id"]:
             doc_id = root.attrib[attr]
             for lang in langs:
-                filename = "{}/ltf/{}.ltf.xml".format(lang, doc_id)
+                filename = "{}/{}/ltf/{}.ltf.xml".format(srcdir, lang, doc_id)
                 if os.path.isfile(filename):
                     f[lang] = doc_id
                     l[attr] = lang
                     break
-        files.append(f)
+        files[f[l["source_id"]]] = f
         print("{}:{}\t{}:{}".format(l["source_id"], f[l["source_id"]],
                                     l["translation_id"], f[l["translation_id"]]))
 
 try:
-    os.makedirs("corpus_to_align")
+    os.makedirs(dstdir)
 except OSError:
     pass
 for lang in ["source", "target"]:
     for name in ["untokenized", "tokenized", "prepared"]:
-        os.makedirs("corpus_to_align/{}_language_corpus_{}".format(lang, name))
+        os.makedirs("{}/{}_language_corpus_{}".format(dstdir, lang, name))
 
 def process(xmlfilename, lang, doc_id):
     tree = et.parse(xmlfilename)
@@ -47,7 +49,7 @@ def process(xmlfilename, lang, doc_id):
 
     files = {}
     for name in ["untokenized", "tokenized", "prepared"]:
-        files[name] = open("corpus_to_align/{}_language_corpus_{}/{}.txt".format(lang, name, doc_id), "w")
+        files[name] = open("{}/{}_language_corpus_{}/{}.txt".format(dstdir, lang, name, doc_id), "w")
 
     for seg in text:
         seg_id = seg.attrib['id']
@@ -62,9 +64,8 @@ def process(xmlfilename, lang, doc_id):
         files["tokenized"].write(tokenized + "\n")
         files["prepared"].write(tokenized.lower() + "\n")
 
-for f in files:
+for doc_id, f in files.items():
     sl, tl = langs
-    doc_id = f[sl]
-    process("{}/ltf/{}.ltf.xml".format(sl, f[sl]), "source", doc_id)
-    process("{}/ltf/{}.ltf.xml".format(tl, f[tl]), "target", doc_id)
+    process("{}/{}/ltf/{}.ltf.xml".format(srcdir, sl, f[sl]), "source", doc_id)
+    process("{}/{}/ltf/{}.ltf.xml".format(srcdir, tl, f[tl]), "target", doc_id)
 

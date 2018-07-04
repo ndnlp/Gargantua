@@ -29,7 +29,11 @@ for doc_id, group in itertools.groupby(reader(info_file),
     doc_id = doc_id[:-4]
     root = et.Element("alignments")
     root.attrib['source_id'] = doc_id
-    root.attrib['translation_id'] = files[doc_id][3]
+    try:
+        root.attrib['translation_id'] = files[doc_id][3]
+    except KeyError:
+        sys.stderr.write("warning: skipping {}\n".format(doc_id))
+        continue
     tree = et.ElementTree(root)
     for _, source_ids, target_ids in group:
         alignment = et.Element("alignment")
