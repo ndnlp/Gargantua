@@ -50,4 +50,4 @@ for doc_id, group in itertools.groupby(reader(info_file),
         alignment.append(source)
         alignment.append(trans)
         root.append(alignment)
-    tree.write("sentence_alignment/{}.align.xml".format(doc_id))
+    tree.write("sentence_alignment/{}.aln.xml".format(doc_id))
